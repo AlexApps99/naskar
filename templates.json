@@ -1,0 +1,17 @@
+[
+  {
+    "file": "templates/Untitled.png",
+    "title": {
+      "xy": [[32, 128], [1000, 1000]],
+      "fill": "#000000",
+      "size": 64,
+      "center": false
+    },
+    "text": {
+      "xy": [[32, 256], [1000, 1000]],
+      "fill": "#000000",
+      "size": 26,
+      "center": false
+    }
+  }
+]

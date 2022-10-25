@@ -3,7 +3,6 @@ from random import choice
 import json
 from io import BytesIO
 
-# TODO title
 class Render:
   '''
   Facilitates turning a sonnet into an image

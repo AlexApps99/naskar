@@ -5,6 +5,7 @@ from .render import Render
 import json
 import base64
 import sys
+import os
 from PIL.ImageQt import ImageQt
 from PyQt6.QtWidgets import (
     QMainWindow, QApplication,
@@ -14,7 +15,7 @@ from PyQt6.QtGui import QAction, QIcon, QPixmap
 from PyQt6.QtCore import Qt, QSize
 
 class MainWindow(QMainWindow):
-  def __init__(self):
+  def __init__(self, title="", prompt=""):
     super(MainWindow, self).__init__()
     self.setWindowTitle("Counterfeit Abhijit")
 
@@ -23,11 +24,11 @@ class MainWindow(QMainWindow):
 
     layout = QVBoxLayout()
 
-    self.title_box = QLineEdit()
+    self.title_box = QLineEdit(title)
     self.title_box.setPlaceholderText("Title")
     self.title_box.textChanged.connect(self.ready_to_generate)
 
-    self.prompt_box = QPlainTextEdit()
+    self.prompt_box = QPlainTextEdit(prompt)
     self.prompt_box.setPlaceholderText("Write a sonnet about mayonnaise:")
     self.prompt_box.setTabChangesFocus(True)
     self.prompt_box.textChanged.connect(self.ready_to_generate)
@@ -55,8 +56,8 @@ class MainWindow(QMainWindow):
     widget.setLayout(layout)
     self.setCentralWidget(widget)
 
-    self.title = ""
-    self.prompt = ""
+    self.title = title.strip()
+    self.prompt = prompt.strip()
     self.gpt = None
     self.sonnets = []
     self.render = Render("templates.json")
@@ -94,26 +95,31 @@ class MainWindow(QMainWindow):
 
   def upload(self):
     img = Render.encode(self.imgs[self.idx], "png")
+
+    os.makedirs("log", exist_ok=True)
     try:
-      with open("log.json", "x") as f:
+      with open("log/log.json", "x") as f:
         f.write("[]")
     except FileExistsError:
       pass
 
-    with open("log.json", "r+") as f:
+    with open("log/log.json", "r+") as f:
       j = json.load(f)
+      l = len(j)
       j.append({
         "title": self.title,
         "prompt": self.prompt,
         "gpt": self.gpt,
         "sonnets": self.sonnets,
         "idx": self.idx,
-        # TODO this is bad for disk space
-        "img": "data:image/png;base64," + base64.b64encode(img).decode("utf-8")
+        "img": f"log/{l}.png"
       })
       f.seek(0)
       json.dump(j, f, indent=2)
       f.truncate()
+
+    with open(f"log/{l}.png", "xb") as f:
+      f.write(img)
 
     self.social.upload(self.title, self.sonnets[self.idx], img)
 

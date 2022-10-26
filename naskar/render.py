@@ -10,12 +10,17 @@ class Render:
   def __init__(self, filename="templates.json"):
     with open(filename, "rb") as f:
       self.templates = json.load(f)
+    for k, v in self.templates.items():
+      v["name"] = k
 
-  def get_template(self, load=True):
+  def get_template(self, name=None, load=True):
     '''
     Picks a random template, loading the image in the process
     '''
-    t = choice(self.templates)
+    if name:
+      t = self.templates[name]
+    else:
+      t = choice(list(self.templates.values()))
     if load:
       if "img" not in t:
         with Image.open(t["file"]) as img:
@@ -27,8 +32,7 @@ class Render:
     '''
     Adds text to image, given text params p
     '''
-    # TODO scale the font size until the text fits the bounds
-    font = ImageFont.truetype("/usr/share/fonts/TTF/" + p.get("font", "Roboto-Regular.ttf"), p["size"])
+    font = ImageFont.truetype("fonts/" + p.get("font", "Roboto-Regular.ttf"), p["size"])
     cent = p.get("center", False)
     imgdraw.text(
       xy=p["xy"][0],
@@ -40,21 +44,24 @@ class Render:
       align="center" if cent else "left"
     )
 
-  def generate(self, title, sonnet, format=None):
+  def generate(self, title, sonnet, template=None, format=None):
     '''
     Generates an image from a given sonnet
     '''
-    t = self.get_template()
+    t = self.get_template(template)
     img = t["img"].copy()
     d = ImageDraw.Draw(img)
     self.add_text(d, title, t["title"])
     self.add_text(d, sonnet, t["text"])
+
     if format:
-      return Render.encode(img, format)
-    else:
-      return img
+      img = Render.encode(img, format)
+    return (img, t["name"])
 
   def encode(img, format):
+    '''
+    Encodes a Pillow image into the given format
+    '''
     imgb = BytesIO()
     img.save(imgb, format=format)
     return imgb.getvalue()

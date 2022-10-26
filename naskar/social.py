@@ -3,8 +3,14 @@ import requests
 from io import BytesIO
 
 class Social:
+  '''
+  Handles uploading sonnets to social media
+  '''
   FB_GRAPH = "https://graph.facebook.com/v15.0/"
   def __init__(self, keys):
+    '''
+    Initialize given a dictionary of API keys
+    '''
     self.discord = keys["discord"]
     # v1.1 can upload media
     self.twitter1 = tweepy.OAuth1UserHandler(
@@ -25,6 +31,9 @@ class Social:
     self.fb_id = str(keys["fb_id"])
 
   def upload_discord(self, title, desc, img):
+    '''
+    Upload to Discord webhook (returns image URL, as used for other social media)
+    '''
     r = requests.post(self.discord + "?wait=true", data={
       "content": "**" + title + "**\n" + desc,
     }, files={
@@ -35,6 +44,9 @@ class Social:
     return r.json()["attachments"][0]["url"]
 
   def upload_twitter(self, title, desc, img, img_url):
+    '''
+    Upload to Twitter
+    '''
     # Twitter only allows media uploads on v1.1 api (bruh)
     media = self.twitter1.media_upload("sonnet.png", file=BytesIO(img), media_category="tweet_image")
     self.twitter2.create_tweet(
@@ -44,6 +56,9 @@ class Social:
     )
 
   def upload_facebook(self, title, desc, img, img_url):
+    '''
+    Upload to Facebook
+    '''
     r = requests.get(self.FB_GRAPH + self.fb_id, params={"fields": "access_token", "access_token": self.meta})
     r.raise_for_status()
     page_token = r.json()["access_token"]
@@ -56,6 +71,9 @@ class Social:
     r.raise_for_status()
 
   def upload_instagram(self, title, desc, img, img_url):
+    '''
+    Upload to Instagram
+    '''
     r = requests.post(self.FB_GRAPH + self.ig_id + "/media", params={
       "image_url": img_url,
       "caption": title,
@@ -70,7 +88,10 @@ class Social:
     r.raise_for_status()
 
   def upload(self, title, desc, img):
-    # jank to have an uploaded copy somehwere
+    '''
+    Upload to all social media platforms
+    '''
+    # jank to have an uploaded copy somewhere
     img_url = self.upload_discord(title, desc, img)
     for up in [self.upload_twitter, self.upload_facebook, self.upload_instagram]:
       try:

@@ -1,5 +1,5 @@
-[
-  {
+{
+  "abhijit": {
     "file": "templates/Untitled.png",
     "title": {
       "xy": [[32, 128], [1000, 1000]],
@@ -13,5 +13,20 @@
       "size": 26,
       "center": false
     }
+  },
+  "anti-abhijit": {
+    "file": "templates/Entitled.png",
+    "title": {
+      "xy": [[32, 128], [1000, 1000]],
+      "fill": "#FFFFFF",
+      "size": 64,
+      "center": false
+    },
+    "text": {
+      "xy": [[32, 256], [1000, 1000]],
+      "fill": "#FFFFFF",
+      "size": 26,
+      "center": false
+    }
   }
-]
+}

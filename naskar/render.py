@@ -1,15 +1,14 @@
 from PIL import Image, ImageFont, ImageDraw
 from random import choice
-import json
 from io import BytesIO
 
 class Render:
   '''
   Facilitates turning a sonnet into an image
   '''
-  def __init__(self, filename="templates.json"):
-    with open(filename, "rb") as f:
-      self.templates = json.load(f)
+  def __init__(self, templates, debug=False):
+    self.templates = templates
+    self.debug = debug
     for k, v in self.templates.items():
       v["name"] = k
 
@@ -23,7 +22,7 @@ class Render:
       t = choice(list(self.templates.values()))
     if load:
       if "img" not in t:
-        with Image.open(t["file"]) as img:
+        with Image.open("templates/" + t["file"]) as img:
           img.load()
         t["img"] = img
     return t
@@ -32,8 +31,9 @@ class Render:
     '''
     Adds text to image, given text params p
     '''
-    font = ImageFont.truetype("fonts/" + p.get("font", "Roboto-Regular.ttf"), p["size"])
+    font = ImageFont.truetype("templates/" + p.get("font", "Roboto-Regular.ttf"), p["size"])
     cent = p.get("center", False)
+    if self.debug: imgdraw.rectangle([tuple(c) for c in p["xy"]], "#ff00ff40")
     imgdraw.text(
       xy=p["xy"][0],
       text=text,

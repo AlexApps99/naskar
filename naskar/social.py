@@ -93,9 +93,11 @@ class Social:
     '''
     # jank to have an uploaded copy somewhere
     img_url = self.upload_discord(title, desc, img)
+    exceptions = []
     for up in [self.upload_twitter, self.upload_facebook, self.upload_instagram]:
       try:
         up(title, desc, img, img_url)
       except Exception as e:
-        print(up.__name__, e)
+        exceptions += [(up.__name__, e)]
+    return exceptions
 

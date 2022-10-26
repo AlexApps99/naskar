@@ -16,7 +16,6 @@ class MainWindow(QWidget):
 
   def __init__(self, title="", prompt="Write a sonnet:", gen_on_open=False):
     super().__init__()
-    # TODO bugs could lurk here
     self.guts = SonnetGuts()
 
     layout = QVBoxLayout()
@@ -74,18 +73,19 @@ class MainWindow(QWidget):
       self.data = self.guts.gen_sonnets(title, prompt)
     blop = BlockingOp(self, "Generating sonnets", blop_fn)
     blop.exec()
-    if self.data:
+    if blop.exception:
+      err = ExceptionPopup(self, exception=blop.exception)
+      err.exec()
+    elif self.data:
       self.refresh_images()
       return True
-    else:
-      return False
+    return False
 
   def refresh_images(self):
     '''
     Re-render the image row
     '''
 
-    # TODO bugs could lurk here
     self.guts.render_sonnets(self.data)
     self.idx = -1
     self.img_row.clear()
@@ -117,10 +117,15 @@ class MainWindow(QWidget):
     Uploads the selected sonnet from the image row
     '''
     def blop_fn():
-      # TODO bugs could lurk here
       return self.guts.upload_sonnet(self.data, self.idx)
     blop = BlockingOp(self, "Uploading sonnet", blop_fn)
     blop.exec()
+    if blop.return_v or blop.exception:
+      if blop.return_v:
+        err = ExceptionPopup(self, "Upload errors", "\n\n".join([f"{name}:\n{e}" for name, e in blop.return_v]))
+      else:
+        err = ExceptionPopup(self, "Upload errors", exception=blop.exception)
+      err.exec()
 
   def edit_sonnet(self):
     '''
@@ -189,9 +194,15 @@ class BlockingOp(QProgressDialog):
   '''
 
   def __init__(self, parent, label, fn, *args, **kwargs):
+    self.exception = None
+    self.return_v = None
     super().__init__(label, None, 0, 0, parent)
     def new_fn():
-      fn(*args, **kwargs)
+      try:
+        self.return_v = fn(*args, **kwargs)
+        print(self.return_v)
+      except Exception as e:
+        self.exception = e
       self.reset()
     self.thread = threading.Thread(target=new_fn)
     self.thread.start()
@@ -202,7 +213,7 @@ class ExceptionPopup(QMessageBox):
   '''
 
   def __init__(self, parent, text="", info="", exception=None):
-    super().__init__(self, QMessageBox.Icon.Critical, "Error", parent=parent)
+    super().__init__(QMessageBox.Icon.Critical, "Error", "", parent=parent)
     self.setTextFormat(Qt.TextFormat.PlainText)
     if exception:
       self.setText(text if text else "Exception occured")

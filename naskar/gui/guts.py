@@ -9,28 +9,31 @@ class SonnetGuts:
   '''
   Contains headless logic for sonnet generation
   '''
-  keys = None
-  render = None
-  social = None
 
-  def __init__(self):
-    if not self.keys:
-      with open("keys.json", "rb") as f:
-        self.keys = json.load(f)
-    if not self.render:
-      self.render = Render("templates.json")
-    if not self.social:
-      self.social = Social(self.keys)
-    self.templates = list(self.render.templates.keys())
+  def __init__(self, keys_path="keys.json", templates_path="templates.json", log_path="log"):
+    with open(keys_path, "rb") as f:
+      self.keys = json.load(f)
+    with open(templates_path, "rb") as f:
+      self.templates = json.load(f)
+    self.render = Render(self.templates, debug=True)
+    self.social = Social(self.keys)
+    self.log_path = log_path
+
+  def template_list(self):
+    '''
+    List of all template names
+    '''
+    return list(self.templates.keys())
 
   def gen_sonnets(self, title, prompt):
     '''
     Generate sonnets using GPT, returning a dict with sonnet data
     '''
     title = title.strip()
-    prompt = prompt.strip()
+    prompt = prompt.lstrip()
     if title and prompt:
-      prompt += "\n\n"
+      if prompt.rstrip().endswith(":"):
+        prompt = prompt.rstrip() + "\n\n"
       gpt = complete(prompt, self.keys["openai"])
       sonnets = clean(gpt, prune=False)
       for sonnet in sonnets:
@@ -58,18 +61,16 @@ class SonnetGuts:
     '''
     Upload sonnet using dict from render_sonnets() and index within dict
     '''
-    if not (data and idx >= 0 and idx < len(data["sonnets"])):
-      return False
     sonnet = data["sonnets"][idx]
     png = Render.encode(sonnet["image"], "png")
-    os.makedirs("log", exist_ok=True)
+    os.makedirs(self.log_path, exist_ok=True)
     try:
-      with open("log/log.json", "x") as f:
+      with open(self.log_path + "/log.json", "x") as f:
         f.write("[]")
     except FileExistsError:
       pass
 
-    with open("log/log.json", "r+") as f:
+    with open(self.log_path + "/log.json", "r+") as f:
       j = json.load(f)
       l = len(j)
       j.append({
@@ -77,15 +78,14 @@ class SonnetGuts:
         "prompt": data["prompt"],
         "text": sonnet["text"],
         "template": sonnet["template"],
-        "img": f"log/{l}.png"
+        "img": f"{l}.png"
       })
       f.seek(0)
       json.dump(j, f, indent=2)
       f.truncate()
 
-    with open(f"log/{l}.png", "xb") as f:
+    with open(f"{self.log_path}/{l}.png", "xb") as f:
       f.write(png)
 
-    self.social.upload(sonnet["title"], sonnet["text"], png)
-    return True
+    return self.social.upload(sonnet["title"], sonnet["text"], png)
 
